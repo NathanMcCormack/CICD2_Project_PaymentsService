@@ -1,9 +1,9 @@
-# Minimal Makefile with start/stop 
-APP = app.main:app 
-PID_FILE = .uvicorn.pid 
+PaymentServiceAPP = app.main:app 
 install: 
 	pip install -r requirements.txt 
-run: 
-	python -m uvicorn $(APP) --host 0.0.0.0 --port 8000 --reload 
+
+runPayment: 
+	python -m uvicorn $(PaymentServiceAPP) --host 0.0.0.0 --port 8000 --reload 
+
 test: 
-	python -m pytest -q 
+	python -m pytest -q

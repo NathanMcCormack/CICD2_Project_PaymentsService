@@ -1,29 +1,24 @@
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship 
-from sqlalchemy import String, Integer, ForeignKey
+from datetime import datetime
+from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-class Base(DeclarativeBase): 
-    pass 
 
-class UserDB(Base): 
-    __tablename__ = "users" 
-    
-    id: Mapped[int] = mapped_column(primary_key=True, index=True) 
-    first_name: Mapped[str] = mapped_column(String, nullable=False) 
-    last_name: Mapped[str] = mapped_column(String, nullable=False) 
-    email: Mapped[str] = mapped_column(String, unique=True, nullable=False) 
-    phone: Mapped[str] = mapped_column(String, unique=True, nullable=False)
-    age: Mapped[int] = mapped_column(Integer, nullable=False) 
-    student_id: Mapped[str] = mapped_column(String, unique=True, nullable=False) 
-    address: Mapped[list["AddressDB"]] = relationship(back_populates="resident", cascade="all, delete-orphan")
+class Base(DeclarativeBase):
+    pass
 
-class AddressDB(Base):
-    __tablename__ = "address"
+class UserDB(Base):
+    __tablename__ = "users"
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    payments: Mapped[list["PaymentDB"]] = relationship(back_populates="user",cascade="all, delete-orphan",)
 
-    id: Mapped[int] =  mapped_column(primary_key=True)
-    address_line1: Mapped[str] = mapped_column(String, nullable=False)
-    address_line2: Mapped[str] = mapped_column(String, nullable=True)
-    apartment_block_number: Mapped[str] = mapped_column(String, nullable=True)
-    county: Mapped[str] = mapped_column(String, nullable=False)
-    post_code: Mapped[str] = mapped_column(String, nullable=False)
-    resident_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    resident: Mapped[UserDB] =  relationship(back_populates="address")
+class PaymentDB(Base):
+    __tablename__ = "payments"
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"),nullable=False,index=True,)
+    amount_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)  # eg EUR
+    description: Mapped[str] = mapped_column(String, nullable=True)
+    status: Mapped[str] = mapped_column(String, nullable=False, default="pending")  # pending/completed/failed/refunded
+    payment_method: Mapped[str] = mapped_column(String, nullable=False)  # stripe/paypal/visa/mastercard etc.
+    user: Mapped["UserDB"] = relationship(back_populates="payments")

@@ -8,6 +8,8 @@ from .database import engine, get_db
 from .models import Base, PaymentDB, UserDB
 from .schemas import PaymentCreate, PaymentRead, PaymentUpdate
 from app.mq import publish_payment_created
+import os
+import httpx
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,6 +33,20 @@ def commit_or_rollback(db: Session, error_msg: str):
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=409, detail=error_msg)
+
+def verify_user_exists(user_id: int) -> None:
+    base_url = os.getenv("USER_SERVICE_URL", "http://localhost:8001").rstrip("/")
+    url = f"{base_url}/api/users/{user_id}"
+
+    try:
+        r = httpx.get(url, timeout=2.0)
+    except httpx.RequestError:
+        raise HTTPException(status_code=503, detail="Users service unavailable")
+
+    if r.status_code == 404:
+        raise HTTPException(status_code=404, detail="User not found")
+    if r.status_code != 200:
+        raise HTTPException(status_code=503, detail="Users service unavailable")
 
 
 # ------------- Health Check ---------------------
@@ -61,7 +77,7 @@ def list_payments_for_user(user_id: int, db: Session = Depends(get_db)):
 
 @app.post("/api/payments", response_model=PaymentRead, status_code=status.HTTP_201_CREATED)
 def create_payment(payload: PaymentCreate, db: Session = Depends(get_db)):
-    user = db.get(UserDB, payload.user_id)
+    verify_user_exists(payload.user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 

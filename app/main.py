@@ -1,22 +1,19 @@
 from contextlib import asynccontextmanager
-
 from fastapi import Depends, FastAPI, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-
 from .database import engine, get_db
 from .models import Base, PaymentDB, UserDB
 from .schemas import PaymentCreate, PaymentRead, PaymentUpdate
-
+from app.mq import publish_payment_created
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Create tables once on startup
     Base.metadata.create_all(bind=engine)
     yield
-
 
 app = FastAPI(title="Payments Service", lifespan=lifespan)
 
@@ -27,7 +24,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 def commit_or_rollback(db: Session, error_msg: str):
     try:
@@ -63,7 +59,6 @@ def list_payments_for_user(user_id: int, db: Session = Depends(get_db)):
     stmt = select(PaymentDB).where(PaymentDB.user_id == user_id).order_by(PaymentDB.id)
     return list(db.execute(stmt).scalars())
 
-
 @app.post("/api/payments", response_model=PaymentRead, status_code=status.HTTP_201_CREATED)
 def create_payment(payload: PaymentCreate, db: Session = Depends(get_db)):
     user = db.get(UserDB, payload.user_id)
@@ -74,8 +69,16 @@ def create_payment(payload: PaymentCreate, db: Session = Depends(get_db)):
     db.add(payment)
     commit_or_rollback(db, "Payment could not be created")
     db.refresh(payment)
-    return payment
 
+    publish_payment_created(
+        {
+            "event": "payment_created",
+            "payment_id": payment.id,
+            "user_id": payment.user_id,
+        }
+    )
+
+    return payment
 
 @app.patch("/api/payments/{payment_id}", response_model=PaymentRead)
 def patch_payment(payment_id: int, payload: PaymentUpdate, db: Session = Depends(get_db)):

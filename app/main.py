@@ -54,13 +54,11 @@ def verify_user_exists(user_id: int) -> None:
 def health_check():
     return {"status": "ok", "service": "payments"}
 
-
 # ------------- Payment Endpoints ----------------
 @app.get("/api/payments", response_model=list[PaymentRead])
 def list_payments(db: Session = Depends(get_db)):
     stmt = select(PaymentDB).order_by(PaymentDB.id)
     return list(db.execute(stmt).scalars())
-
 
 @app.get("/api/payments/{payment_id}", response_model=PaymentRead)
 def get_payment(payment_id: int, db: Session = Depends(get_db)):
@@ -68,7 +66,6 @@ def get_payment(payment_id: int, db: Session = Depends(get_db)):
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
     return payment
-
 
 @app.get("/api/users/{user_id}/payments", response_model=list[PaymentRead])
 def list_payments_for_user(user_id: int, db: Session = Depends(get_db)):
@@ -106,7 +103,6 @@ def patch_payment(payment_id: int, payload: PaymentUpdate, db: Session = Depends
     commit_or_rollback(db, "Payment could not be updated")
     db.refresh(payment)
     return payment
-
 
 @app.delete("/api/payments/{payment_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_payment(payment_id: int, db: Session = Depends(get_db)) -> Response:

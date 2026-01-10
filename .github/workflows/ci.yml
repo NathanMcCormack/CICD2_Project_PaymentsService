@@ -25,4 +25,4 @@ jobs:
           pip install pytest pytest-cov flake8
 
       - name: Tests (pytest + coverage)
-        run: pytest --cov=app --cov-report=term-missing
+        run: pytest --cov=app --cov-report=term-missing --cov-fail-under=70

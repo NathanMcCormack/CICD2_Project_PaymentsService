@@ -5,12 +5,10 @@ def _mock_publish(monkeypatch):
     from app import main
     monkeypatch.setattr(main, "publish_payment_created", lambda message: None)
 
-
 @pytest.fixture(autouse=True)
 def _mock_user_verify(monkeypatch):
     from app import main
     monkeypatch.setattr(main, "verify_user_exists", lambda user_id: None)
-
 
 def test_create_payment_requires_user(client, monkeypatch):
     from app import main

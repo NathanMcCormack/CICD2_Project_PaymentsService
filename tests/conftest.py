@@ -16,16 +16,13 @@ engine = create_engine("sqlite+pysqlite://",connect_args={"check_same_thread": F
 def _fk_on(dbapi_conn, _):
     dbapi_conn.execute("PRAGMA foreign_keys=ON")
 
-
 TestingSessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
-
 
 @pytest.fixture(autouse=True)
 def _schema():
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
-
 
 @pytest.fixture
 def client():
@@ -40,7 +37,6 @@ def client():
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
-
 
 @pytest.fixture
 def db_session():

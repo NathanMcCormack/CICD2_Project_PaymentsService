@@ -1,12 +1,16 @@
 from app.models import UserDB
+import pytest 
 
+@pytest.fixture(autouse=True)
+def _mock_publish(monkeypatch):
+    from app import main
+    monkeypatch.setattr(main, "publish_payment_created", lambda message: None)
 
 def _create_user(db_session, user_id: int = 1, name: str = "Nathan McCormack"):
     user = UserDB(id=user_id, name=name)
     db_session.add(user)
     db_session.commit()
     return user
-
 
 def test_create_payment_requires_user(client):
     r = client.post(
@@ -21,7 +25,6 @@ def test_create_payment_requires_user(client):
     )
     assert r.status_code == 404
     assert r.json()["detail"] == "User not found"
-
 
 def test_create_list_get_patch_delete_payment(client, db_session):
     _create_user(db_session, user_id=1)
@@ -74,7 +77,6 @@ def test_create_list_get_patch_delete_payment(client, db_session):
     r = client.get(f"/api/payments/{payment_id}")
     assert r.status_code == 404
 
-
 def test_not_found_cases(client, db_session):
     _create_user(db_session, user_id=1)
 
@@ -86,7 +88,6 @@ def test_not_found_cases(client, db_session):
 
     r = client.delete("/api/payments/999")
     assert r.status_code == 404
-
 
 def test_validation_errors(client, db_session):
     _create_user(db_session, user_id=1)

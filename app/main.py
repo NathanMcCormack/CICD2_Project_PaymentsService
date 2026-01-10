@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from .database import engine, get_db
-from .models import Base, PaymentDB, UserDB
+from .models import Base, PaymentDB
 from .schemas import PaymentCreate, PaymentRead, PaymentUpdate
 from app.mq import publish_payment_created
 import os
@@ -78,8 +78,6 @@ def list_payments_for_user(user_id: int, db: Session = Depends(get_db)):
 @app.post("/api/payments", response_model=PaymentRead, status_code=status.HTTP_201_CREATED)
 def create_payment(payload: PaymentCreate, db: Session = Depends(get_db)):
     verify_user_exists(payload.user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
 
     payment = PaymentDB(**payload.model_dump())
     db.add(payment)

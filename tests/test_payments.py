@@ -1,18 +1,25 @@
-from app.models import UserDB
-import pytest 
+import pytest
 
 @pytest.fixture(autouse=True)
 def _mock_publish(monkeypatch):
     from app import main
     monkeypatch.setattr(main, "publish_payment_created", lambda message: None)
 
-def _create_user(db_session, user_id: int = 1, name: str = "Nathan McCormack"):
-    user = UserDB(id=user_id, name=name)
-    db_session.add(user)
-    db_session.commit()
-    return user
 
-def test_create_payment_requires_user(client):
+@pytest.fixture(autouse=True)
+def _mock_user_verify(monkeypatch):
+    from app import main
+    monkeypatch.setattr(main, "verify_user_exists", lambda user_id: None)
+
+
+def test_create_payment_requires_user(client, monkeypatch):
+    from app import main
+
+    def _raise(_user_id: int):
+        raise main.HTTPException(status_code=404, detail="User not found")
+
+    monkeypatch.setattr(main, "verify_user_exists", _raise)
+
     r = client.post(
         "/api/payments",
         json={
@@ -26,9 +33,8 @@ def test_create_payment_requires_user(client):
     assert r.status_code == 404
     assert r.json()["detail"] == "User not found"
 
-def test_create_list_get_patch_delete_payment(client, db_session):
-    _create_user(db_session, user_id=1)
 
+def test_create_list_get_patch_delete_payment(client):
     # Create
     r = client.post(
         "/api/payments",
@@ -77,9 +83,8 @@ def test_create_list_get_patch_delete_payment(client, db_session):
     r = client.get(f"/api/payments/{payment_id}")
     assert r.status_code == 404
 
-def test_not_found_cases(client, db_session):
-    _create_user(db_session, user_id=1)
 
+def test_not_found_cases(client):
     r = client.get("/api/payments/999")
     assert r.status_code == 404
 
@@ -89,9 +94,8 @@ def test_not_found_cases(client, db_session):
     r = client.delete("/api/payments/999")
     assert r.status_code == 404
 
-def test_validation_errors(client, db_session):
-    _create_user(db_session, user_id=1)
 
+def test_validation_errors(client):
     # amount_cents must be >= 1
     r = client.post(
         "/api/payments",

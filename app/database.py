@@ -1,6 +1,5 @@
 import os
 import time
-
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
@@ -44,7 +43,6 @@ SessionLocal = sessionmaker(
     autoflush=False,
     expire_on_commit=False,
 )
-
 
 def get_db():
     db = SessionLocal()

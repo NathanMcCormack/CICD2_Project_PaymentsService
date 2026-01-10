@@ -8,14 +8,12 @@ StatusStr = Annotated[str, StringConstraints(pattern=r"^(pending|completed|faile
 PaymentMethodStr = Annotated[str, StringConstraints(min_length=2, max_length=50)]
 DescriptionStr = Annotated[str, StringConstraints(min_length=0, max_length=255)]
 
-
 class PaymentCreate(BaseModel):
     user_id: int
     amount_cents: AmountInt
     currency: CurrencyStr
     description: Optional[DescriptionStr] = None
     payment_method: PaymentMethodStr
-
 
 class PaymentRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -26,7 +24,6 @@ class PaymentRead(BaseModel):
     description: Optional[str] = None
     status: StatusStr
     payment_method: PaymentMethodStr
-
 
 class PaymentUpdate(BaseModel):
     amount_cents: Optional[AmountInt] = None

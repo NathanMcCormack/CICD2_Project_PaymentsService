@@ -6,10 +6,8 @@ class Base(DeclarativeBase):
 
 class PaymentDB(Base):
     __tablename__ = "payments"
-
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-
     amount_cents: Mapped[int] = mapped_column(Integer, nullable=False)
     currency: Mapped[str] = mapped_column(String(3), nullable=False)  # eg EUR
     description: Mapped[str] = mapped_column(String, nullable=True)
